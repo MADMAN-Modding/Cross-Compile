@@ -36,7 +36,7 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     let _fetch = Command::new("git")
         .arg("fetch")
         .output()
-        .expect("Failed to Fetch Updates");
+        .map_err(|err| format!("Failed to Fetch Updates {}", err));
 
     // Get the current branch name
     let branch = Command::new("git")
@@ -50,7 +50,7 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     let log = Command::new("git")
         .args(["log", "--oneline", &format!("HEAD..origin/{}", branch_name)])
         .output()
-        .expect("Failed to Get Status");
+        .map_err(|err| format!("Failed to get Status {}", err))?;
 
     // Outputs the stdout of the command
     let log_output = String::from_utf8_lossy(&log.stdout);
@@ -82,9 +82,9 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     if decision {
         // Makes a command for pulling the repo
         let pull = Command::new("git")
-            .arg("pull")
+            .args(["-c", "color.ui=always", "pull"])
             .output()
-            .expect("Failed to pull changes");
+            .map_err(|err| format!("Failed to pull changes {}", err))?;
 
         // Outputs the pulled data
         println!("{}", String::from_utf8_lossy(&pull.stdout).blue());
