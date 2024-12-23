@@ -1,53 +1,84 @@
-use std::{env::set_current_dir, io, path::Path, process::Command};
+use std::{
+    env::set_current_dir,
+    io::{self},
+    path::Path,
+    process::Command,
+};
 
-pub fn pull_repo(directory: &Path) -> bool {
+/**
+ * Pulls the code of the supplied path
+ * Will return ```Ok(())``` as long as there is no error
+ * Fetches data
+ * Gets the current head
+ * Asks user to pull data
+ * Error is a ```String```
+ */
+pub fn pull_repo(directory: &Path) -> Result<(), String> {
     assert!(set_current_dir(&directory).is_ok());
     println!("Set working directory to {}", directory.display());
 
-    // Command for git stuff
-    let mut git = Command::new("git");
-
     // Fetches repository
-    let fetch = &git.arg("fetch").output().expect("Failed to Fetch Updates");
+    let _fetch = Command::new("git")
+        .arg("fetch")
+        .output()
+        .expect("Failed to Fetch Updates");
 
-    // Makes a command for pulling the repo
-    let pull = git.arg("pull");
+    // Get the current branch name
+    let branch = Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .output()
+        .map_err(|err| format!("Failed to get current branch: {}", err))?;
+
+    // Takes the name of the branch from the output of the command
+    let branch_name = String::from_utf8_lossy(&branch.stdout).trim().to_string();
+
+    let log = Command::new("git")
+        .args(["log", "--oneline", &format!("HEAD..origin/{}", branch_name)])
+        .output()
+        .expect("Failed to Get Status");
 
     // Outputs the stdout of the command
-    let output = &fetch.stdout;
+    let log_output = String::from_utf8_lossy(&log.stdout);
 
     // If the fetch is empty than everything is up to date already
-    if String::from_utf8_lossy(&fetch.stdout) != "" {
-        println!("{}", String::from_utf8_lossy(&output));
-        drop(output.to_owned());
-        drop(fetch.to_owned());
+    if log_output.is_empty() {
+        println!("Repository is up to date\nNo data will be pulled");
 
-        // Stores user input
-        let mut input: String = String::new();
-
-        println!("Would you like to pull with the above changes? [Y/n]");
-
-        io::stdin()
-            .read_line(&mut input)
-            .expect("failed to read from stdin");
-
-        let decision: bool = match input.to_lowercase().as_str() {
-            "n" => false,
-            _ => true,
-        };
-
-        println!("Decision was: {}", decision);
-
-        if decision {
-            pull.output().expect("Unable to pull repo");
-        } else {
-            println!("Will not pull repository")
-        }
-
-        return true;
+        return Ok(());
     }
 
-    println!("Repository is up to date\nNo data will be pulled");
+    // Outputs the changes
+    println!("{}", log_output);
 
-    return false;
+    // Stores user input
+    let mut user_input: String = String::new();
+
+    println!("Would you like to pull with the above changes? [Y/n]");
+
+    // Gets user input
+    io::stdin()
+        .read_line(&mut user_input)
+        .expect("failed to read from stdin");
+
+    /* Makes a bool from the user's decision
+    Will be true unless 'n' is supplied */
+    let decision: bool = !user_input.to_lowercase().as_str().contains("n");
+
+    if decision {
+        // Makes a command for pulling the repo
+        let pull = Command::new("git")
+            .arg("pull")
+            .output()
+            .expect("Failed to pull changes");
+
+        if pull.status.success() {
+            return Ok(());
+        } else {
+            return Err("Failed pulling latest changes".to_string());
+        }
+    } else {
+        println!("Will not pull repository")
+    }
+
+    return Ok(());
 }

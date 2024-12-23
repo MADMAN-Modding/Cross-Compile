@@ -12,49 +12,46 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if !args[1].is_empty() {
-        let result: Result<&str, &str> = match args[1].as_str() {
+        let result: Result<String, String> = match args[1].as_str() {
             "--setup" => {setup_dir(&args[2])}
             "--update" => {update_dir(&args[2])}
-            _ => {Err("Option Not Found")}
+            _ => {Err("Option Not Found".to_string())}
         };
 
         if result.is_ok() {
             println!("{}", result.unwrap())
         } else {
-            println!("Failed to execute {}", args[1])
+            println!("Failed to execute {}\nError: {}", args[1], result.err().unwrap())
         }
     } else {
         println!("No cli args found");
     }
 }
 
-fn setup_dir(directory: &str) -> Result<&str, &str> {
+fn setup_dir(directory: &str) -> Result<String, String> {
     if Path::new(&directory).exists() {
-        return Ok("Directory Found");
+        return Ok("Directory Found".to_string());
     }
 
-    return Err("Directory Not Found")
+    return Err("Directory Not Found".to_string())
 }
 
-fn update_dir(directory: &str) -> Result<&str, &str> {
+fn update_dir(directory: &str) -> Result<String, String> {
     let dir = Path::new(directory);
     let git_dir = dir.join(".git").as_path().to_owned();
-
-    // Removes dir variable cause it's no longer needed
-    drop(dir.to_owned());
 
     println!("{}", &git_dir.to_path_buf().to_str().unwrap());
 
     if git_dir.exists() {
 
-        let result: bool = pull_repo(&git_dir);
+        let result: Result<(), String> = pull_repo(&dir);
         
-        match result {
-            true => return Ok("Pull Complete"),
-            false => return Err("Pull Failed")
+        match result.is_ok() {
+            true => return Ok("Updating Complete".to_string()),
+            false => return Err(format!("Updating Failed: {}", result.err().unwrap()))
         };
     }
 
-    return Err("Git dir not found");
+    return Err("Git dir not found".to_string());
 
 }
