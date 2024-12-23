@@ -82,12 +82,12 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     if decision {
         // Makes a command for pulling the repo
         let pull = Command::new("git")
-            .args(["pull", "color=always"])
+            .arg("pull")
             .output()
             .expect("Failed to pull changes");
 
         // Outputs the pulled data
-        println!("{}", String::from_utf8_lossy(&pull.stdout));
+        println!("{}", String::from_utf8_lossy(&pull.stdout).blue());
 
         // If the pull fails, return an error
         if pull.status.success() {
