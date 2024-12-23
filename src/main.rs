@@ -1,5 +1,6 @@
 use std::{env::{self}, path::Path};
 
+use colored::Colorize;
 use git_bindings::pull_repo;
 
 pub mod building {
@@ -11,7 +12,7 @@ pub mod git_bindings;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if !args[1].is_empty() {
+    if args.len() > 1 {
         let result: Result<String, String> = match args[1].as_str() {
             "--setup" => {setup_dir(&args[2])}
             "--update" => {update_dir(&args[2])}
@@ -19,12 +20,12 @@ fn main() {
         };
 
         if result.is_ok() {
-            println!("{}", result.unwrap())
+            println!("{}", result.unwrap().green().bold())
         } else {
-            println!("Failed to execute {}\nError: {}", args[1], result.err().unwrap())
+            println!("Failed to execute {}\nError: {}", args[1].red(), result.err().unwrap().red())
         }
     } else {
-        println!("No cli args found");
+        println!("{}", "No cli args found".red());
     }
 }
 
@@ -39,8 +40,6 @@ fn setup_dir(directory: &str) -> Result<String, String> {
 fn update_dir(directory: &str) -> Result<String, String> {
     let dir = Path::new(directory);
     let git_dir = dir.join(".git").as_path().to_owned();
-
-    println!("{}", &git_dir.to_path_buf().to_str().unwrap());
 
     if git_dir.exists() {
 

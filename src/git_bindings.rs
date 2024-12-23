@@ -5,6 +5,8 @@ use std::{
     process::Command,
 };
 
+use colored::Colorize;
+
 /**
  * Pulls the code of the supplied path
  * Will return ```Ok(())``` as long as there is no error
@@ -14,8 +16,21 @@ use std::{
  * Error is a ```String```
  */
 pub fn pull_repo(directory: &Path) -> Result<(), String> {
-    assert!(set_current_dir(&directory).is_ok());
-    println!("Set working directory to {}", directory.display());
+    
+    // Handles errors setting the directory
+    if let Err(err) = set_current_dir(directory) {
+        return Err(format!(
+            "{}: {}",
+            "Failed to set working directory".red().bold(),
+            err
+        ));
+    }
+    println!(
+        "{} {}",
+        "Set working directory to".green().bold(),
+        directory.display()
+    );
+
 
     // Fetches repository
     let _fetch = Command::new("git")
@@ -42,13 +57,13 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
 
     // If the fetch is empty than everything is up to date already
     if log_output.is_empty() {
-        println!("Repository is up to date\nNo data will be pulled");
+        println!("{}", "Repository is up to date\nNo data will be pulled".yellow().bold());
 
         return Ok(());
     }
 
     // Outputs the changes
-    println!("{}", log_output);
+    println!("\n{}", log_output.blue());
 
     // Stores user input
     let mut user_input: String = String::new();
@@ -67,17 +82,21 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     if decision {
         // Makes a command for pulling the repo
         let pull = Command::new("git")
-            .arg("pull")
+            .args(["pull", "color=always"])
             .output()
             .expect("Failed to pull changes");
 
+        // Outputs the pulled data
+        println!("{}", String::from_utf8_lossy(&pull.stdout));
+
+        // If the pull fails, return an error
         if pull.status.success() {
             return Ok(());
         } else {
             return Err("Failed pulling latest changes".to_string());
         }
     } else {
-        println!("Will not pull repository")
+        println!("{}", "Will not pull repository".blue())
     }
 
     return Ok(());
