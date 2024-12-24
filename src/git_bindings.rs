@@ -1,5 +1,6 @@
 use std::{
     env::set_current_dir,
+    fs::remove_dir_all,
     io::{self},
     path::Path,
     process::Command,
@@ -16,10 +17,8 @@ use colored::Colorize;
  * Error is a ```String```
  */
 pub fn pull_repo(directory: &Path) -> Result<(), String> {
-    
     // Handles errors setting the directory
     let _ = set_working_dir(directory);
-
 
     // Fetches repository
     let _fetch = Command::new("git")
@@ -46,7 +45,12 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
 
     // If the fetch is empty than everything is up to date already
     if log_output.is_empty() {
-        println!("{}", "Repository is up to date\nNo data will be pulled".yellow().bold());
+        println!(
+            "{}",
+            "Repository is up to date\nNo data will be pulled"
+                .yellow()
+                .bold()
+        );
 
         return Ok(());
     }
@@ -81,9 +85,8 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
         // If the pull fails, return an error
         match pull.status.success() {
             true => return Ok(()),
-            false => return Err("Failed pulling latest changes".to_string())
+            false => return Err("Failed pulling latest changes".to_string()),
         }
-        
     } else {
         println!("{}", "Will not pull repository".blue())
     }
@@ -91,11 +94,13 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
     return Ok(());
 }
 
-
 pub fn clone_repo(directory: &Path, repository: &str) -> Result<(), String> {
     let _ = set_current_dir(directory);
 
-    println!("{}", format!("Cloning {} to {}", repository.blue(), directory.to_str().unwrap()));
+    println!(
+        "{}",
+        format!("Cloning {} to {}", repository, directory.to_str().unwrap()).blue()
+    );
 
     // Clones the repository
     let clone = Command::new("git")
@@ -105,24 +110,38 @@ pub fn clone_repo(directory: &Path, repository: &str) -> Result<(), String> {
 
     match clone.status.success() {
         true => return Ok(()),
-        false => return Err(format!("Failed to clone the repository: {}", String::from_utf8(clone.stderr).unwrap()))
+        false => {
+            return Err(format!(
+                "Failed to clone the repository: {}",
+                String::from_utf8(clone.stderr).unwrap()
+            ))
+        }
+    };
+}
+
+pub fn remove_repo(directory: &Path) -> Result<(), &str> {
+    let result = remove_dir_all(directory);
+
+    match result.is_ok() {
+        true => return Ok(()),
+        false => return Err("Could not remove directory"),
     };
 }
 
 fn set_working_dir(directory: &Path) -> Result<(), String> {
-        // Handles errors setting the directory
-        if let Err(err) = set_current_dir(directory) {
-            return Err(format!(
-                "{}: {}",
-                "Failed to set working directory".red().bold(),
-                err
-            ));
-        }
+    // Handles errors setting the directory
+    if let Err(err) = set_current_dir(directory) {
+        return Err(format!(
+            "{}: {}",
+            "Failed to set working directory".red().bold(),
+            err
+        ));
+    }
 
-        println!(
-            "{} {}",
-            "Set working directory to".green().bold(),
-            directory.display()
-        );
-        Ok(())
+    println!(
+        "{} {}",
+        "Set working directory to".green().bold(),
+        directory.display()
+    );
+    Ok(())
 }
