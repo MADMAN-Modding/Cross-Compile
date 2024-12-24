@@ -1,7 +1,7 @@
-use std::{env::{self}, path::Path};
+use std::{env::{self}, fs::create_dir_all, path::Path};
 
 use colored::Colorize;
-use git_bindings::pull_repo;
+use git_bindings::{clone_repo, pull_repo};
 
 pub mod building {
     mod build_rust;
@@ -16,6 +16,7 @@ fn main() {
         let result: Result<String, String> = match args[1].as_str() {
             "--setup" => {setup_dir(&args[2])}
             "--update" => {update_dir(&args[2])}
+            "--clone" => {clone_dir(&args[2], &args[3])}
             _ => {Err("Option Not Found".to_string())}
         };
 
@@ -52,5 +53,17 @@ fn update_dir(directory: &str) -> Result<String, String> {
     }
 
     return Err("Git dir not found".to_string());
+}
 
+fn clone_dir(directory: &str, repository: &str) -> Result<String, String> {
+    let dir = Path::new(directory);
+    
+    let _ = create_dir_all(dir);
+
+    let result = clone_repo(dir, repository);
+
+    match result.is_ok() {
+        true => return Ok("Directory Cloning Complete".to_string()),
+        false => return Err(format!("Cloning Failed: {}", result.err().unwrap()))
+    }
 }

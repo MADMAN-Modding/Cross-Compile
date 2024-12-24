@@ -18,18 +18,7 @@ use colored::Colorize;
 pub fn pull_repo(directory: &Path) -> Result<(), String> {
     
     // Handles errors setting the directory
-    if let Err(err) = set_current_dir(directory) {
-        return Err(format!(
-            "{}: {}",
-            "Failed to set working directory".red().bold(),
-            err
-        ));
-    }
-    println!(
-        "{} {}",
-        "Set working directory to".green().bold(),
-        directory.display()
-    );
+    let _ = set_working_dir(directory);
 
 
     // Fetches repository
@@ -90,14 +79,50 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
         println!("{}", String::from_utf8_lossy(&pull.stdout).blue());
 
         // If the pull fails, return an error
-        if pull.status.success() {
-            return Ok(());
-        } else {
-            return Err("Failed pulling latest changes".to_string());
+        match pull.status.success() {
+            true => return Ok(()),
+            false => return Err("Failed pulling latest changes".to_string())
         }
+        
     } else {
         println!("{}", "Will not pull repository".blue())
     }
 
     return Ok(());
+}
+
+
+pub fn clone_repo(directory: &Path, repository: &str) -> Result<(), String> {
+    let _ = set_current_dir(directory);
+
+    println!("{}", format!("Cloning {} to {}", repository.blue(), directory.to_str().unwrap()));
+
+    // Clones the repository
+    let clone = Command::new("git")
+        .args(["clone", &repository])
+        .output()
+        .map_err(|err| format!("{} {}", "Failed to clone repository".red(), err))?;
+
+    match clone.status.success() {
+        true => return Ok(()),
+        false => return Err(format!("Failed to clone the repository: {}", String::from_utf8(clone.stderr).unwrap()))
+    };
+}
+
+fn set_working_dir(directory: &Path) -> Result<(), String> {
+        // Handles errors setting the directory
+        if let Err(err) = set_current_dir(directory) {
+            return Err(format!(
+                "{}: {}",
+                "Failed to set working directory".red().bold(),
+                err
+            ));
+        }
+
+        println!(
+            "{} {}",
+            "Set working directory to".green().bold(),
+            directory.display()
+        );
+        Ok(())
 }
