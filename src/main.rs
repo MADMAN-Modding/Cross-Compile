@@ -16,11 +16,11 @@ pub mod git_bindings;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() > 1 {
+    if args.len() > 2 {
         let result: Result<String, String> = match args[1].as_str() {
             "-s" | "--setup" => setup_dir(&args[2]),
             "-u" | "--update" => update_dir(&args[2]),
-            "-c" | "--clone" => clone_dir(&args[2], &args[3]),
+            "-c" | "--clone" => clone_dir(&args[2], &args.get(3).unwrap_or(&"No URL Provided".red().bold().to_string())),
             "-r" | "--remove" => remove_git_dir(&args[2]),
             _ => Err("Option Not Found".to_string()),
         };
@@ -35,7 +35,7 @@ fn main() {
             )
         }
     } else {
-        println!("{}", "No cli args found".red());
+        println!("{}", "Not enough arguments found.\nUsage: <option> <arg1> [arg2]".red().bold());
     }
 }
 
