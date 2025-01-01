@@ -8,6 +8,8 @@ use std::{
 
 use colored::Colorize;
 
+use crate::common::set_working_dir;
+
 /**
  * Pulls the code of the supplied path
  * Will return ```Ok(())``` as long as there is no error
@@ -126,22 +128,4 @@ pub fn remove_repo(directory: &Path) -> Result<(), &str> {
         true => return Ok(()),
         false => return Err("Could not remove directory"),
     };
-}
-
-fn set_working_dir(directory: &Path) -> Result<(), String> {
-    // Handles errors setting the directory
-    if let Err(err) = set_current_dir(directory) {
-        return Err(format!(
-            "{}: {}",
-            "Failed to set working directory".red().bold(),
-            err
-        ));
-    }
-
-    println!(
-        "{} {}",
-        "Set working directory to".green().bold(),
-        directory.display()
-    );
-    Ok(())
 }

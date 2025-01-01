@@ -7,13 +7,16 @@ use std::{
 use colored::Colorize;
 use git_bindings::{clone_repo, pull_repo, remove_repo};
 use server_handler::server;
+use building::language_picker::handle_input;
 
 pub mod building {
-    mod build_rust;
+    pub mod language_picker;
+    pub mod build_rust;
 }
 
 pub mod git_bindings;
 pub mod server_handler;
+pub mod common;
 
 
 fn main() {
@@ -27,6 +30,7 @@ fn main() {
             "-u" | "--update" => update_dir(&args[2]),
             "-c" | "--clone" => clone_dir(&args[2], &args.get(3).unwrap_or(&"No URL Provided".red().bold().to_string())),
             "-r" | "--remove" => remove_git_dir(&args[2]),
+            "-b" | "--build" => handle_input(args.clone()),
             "--server" => server(),
             _ => Err("Option Not Found".to_string()),
         };
