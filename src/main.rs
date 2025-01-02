@@ -38,11 +38,13 @@ fn main() {
         if result.is_ok() {
             println!("{}", result.unwrap().green().bold())
         } else {
-            println!(
+            eprintln!(
                 "Failed to execute {}\nError: {}",
                 args[1].red().bold(),
                 result.err().unwrap().red().bold()
-            )
+            );
+
+            std::process::exit(-1);
         }
     } else {
         println!("{}", "Not enough arguments found.\nUsage: <option> <arg1> [arg2]".red().bold());
