@@ -1,5 +1,4 @@
 use std::{
-    env::set_current_dir,
     fs::remove_dir_all,
     io::{self},
     path::Path,
@@ -97,11 +96,11 @@ pub fn pull_repo(directory: &Path) -> Result<(), String> {
 }
 
 pub fn clone_repo(directory: &Path, repository: &str) -> Result<(), String> {
-    let _ = set_current_dir(directory);
+    let _ = set_working_dir(directory);
 
     println!(
         "{}",
-        format!("Cloning {} to {}", repository, directory.to_str().unwrap()).blue()
+        format!("Cloning {} to {}....", repository, directory.to_str().unwrap()).blue()
     );
 
     // Clones the repository
